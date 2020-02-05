@@ -159,6 +159,10 @@ locals {
     local.bucket,
     data.aws_s3_bucket.selected.region,
   ) : format(var.bucket_domain_format, local.bucket)
+
+  bucket_website_url = locals.website_enabled ? join("", 
+    concat([""], aws_s3_bucket.origin.*.wesite_domain)
+  ) : ""
 }
 
 resource "aws_cloudfront_distribution" "default" {
@@ -181,7 +185,7 @@ resource "aws_cloudfront_distribution" "default" {
   aliases = var.acm_certificate_arn != "" ? var.aliases : []
 
   origin {
-    domain_name = var.use_website_url ? aws_s3_bucket.origin.website_domain : local.bucket_domain_name
+    domain_name = var.use_website_url ? local.bucket_website_url : local.bucket_domain_name
     origin_id   = module.distribution_label.id
     origin_path = var.origin_path
 
