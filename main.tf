@@ -153,7 +153,7 @@ locals {
       concat([var.origin_bucket], concat([""], aws_s3_bucket.origin.*.id))
     )
   )
-
+  
   bucket_domain_name = var.use_regional_s3_endpoint ? format(
     "%s.s3-%s.amazonaws.com",
     local.bucket,
@@ -181,12 +181,20 @@ resource "aws_cloudfront_distribution" "default" {
   aliases = var.acm_certificate_arn != "" ? var.aliases : []
 
   origin {
-    domain_name = local.bucket_domain_name
+    domain_name = var.use_website_url ? aws_s3_bucket.origin.website_domain : local.bucket_domain_name
     origin_id   = module.distribution_label.id
     origin_path = var.origin_path
 
-    s3_origin_config {
+    dynamic "s3_origin_config" {
+      for_each = var.use_website_url ? [] : ["true"]
       origin_access_identity = aws_cloudfront_origin_access_identity.default.cloudfront_access_identity_path
+    }
+
+    dynamic "custom_origin_config" {
+      for_each = var.use_website_url ? ["true"] : []
+      http_port = 80
+      https_port = 443
+      origin_protocol_policy = "https-only"
     }
   }
 

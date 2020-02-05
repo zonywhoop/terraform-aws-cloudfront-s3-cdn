@@ -360,6 +360,12 @@ variable "error_document" {
   description = "An absolute path to the document to return in case of a 4XX error"
 }
 
+variable "use_website_url" {
+  type        = bool
+  default     = false
+  description = "If bucket is configured as website, use website url as origin vs bucket rest interface"
+}
+
 variable "routing_rules" {
   type        = string
   default     = ""
