@@ -377,3 +377,15 @@ variable "ipv6_enabled" {
   default     = true
   description = "Set to true to enable an AAAA DNS record to be set as well as the A record"
 }
+
+variable "deployment_arns" {
+  type        = map(string)
+  default     = {}
+  description = "(Optional) Map of deployment ARNs to lists of S3 path prefixes to grant `deployment_actions` permissions"
+}
+
+variable "deployment_actions" {
+  type        = list(string)
+  default     = ["s3:PutObject", "s3:PutObjectAcl", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket", "s3:ListBucketMultipartUploads", "s3:GetBucketLocation", "s3:AbortMultipartUpload"]
+  description = "List of actions to permit deployment ARNs to perform"
+}

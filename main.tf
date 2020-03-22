@@ -34,6 +34,17 @@ data "aws_iam_policy_document" "origin" {
   override_json = var.additional_bucket_policy
 
   statement {
+    actions = ["s3:GetObject"]
+
+    resources = ["arn:aws:s3:::$${bucket_name}$${origin_path}*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+  }
+  
+  statement {
     sid = "S3GetObjectForCloudFront"
 
     actions   = ["s3:GetObject"]
@@ -79,7 +90,7 @@ data "aws_region" "current" {
 resource "aws_s3_bucket" "origin" {
   count         = signum(length(var.origin_bucket)) == 1 ? 0 : 1
   bucket        = module.origin_label.id
-  acl           = "private"
+  acl           = var.use_website_url ? "public-read" : "private"
   tags          = module.origin_label.tags
   force_destroy = var.origin_force_destroy
   region        = data.aws_region.current.name
@@ -161,7 +172,7 @@ locals {
   ) : format(var.bucket_domain_format, local.bucket)
 
   bucket_website_url = local.website_enabled ? join("", 
-    concat([""], aws_s3_bucket.origin.*.wesite_domain)
+    concat([""], aws_s3_bucket.origin.*.website_endpoint)
   ) : ""
 }
 
@@ -191,14 +202,19 @@ resource "aws_cloudfront_distribution" "default" {
 
     dynamic "s3_origin_config" {
       for_each = var.use_website_url ? [] : ["true"]
-      origin_access_identity = aws_cloudfront_origin_access_identity.default.cloudfront_access_identity_path
+      content {
+        origin_access_identity = aws_cloudfront_origin_access_identity.default.cloudfront_access_identity_path
+      }
     }
 
     dynamic "custom_origin_config" {
       for_each = var.use_website_url ? ["true"] : []
-      http_port = 80
-      https_port = 443
-      origin_protocol_policy = "https-only"
+      content {
+        http_port = 80
+        https_port = 443
+        origin_protocol_policy = "http-only"
+        origin_ssl_protocols = ["TLSv1.1", "TLSv1.2"]
+      }
     }
   }
 
