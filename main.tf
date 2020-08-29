@@ -208,7 +208,7 @@ locals {
     data.aws_s3_bucket.selected.region,
   ) : format(var.bucket_domain_format, local.bucket)
 
-  bucket_website_url = local.website_enabled ? join("", 
+  bucket_website_url = var.website_enabled ? join("", 
     concat([""], aws_s3_bucket.origin.*.website_endpoint)
   ) : ""
 }
