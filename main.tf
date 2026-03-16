@@ -23,6 +23,8 @@ locals {
     "ap-northeast-1",
     "sa-east-1"
   ]
+
+  template_file_source = var.website_enabled ? data.aws_iam_policy_document.origin_website.json : data.aws_iam_policy_document.origin.json
 }
 
 module "origin_label" {
@@ -55,7 +57,7 @@ data "aws_iam_policy_document" "origin" {
       identifiers = ["*"]
     }
   }
-  
+
   statement {
     sid = "S3GetObjectForCloudFront"
 
@@ -97,20 +99,14 @@ data "aws_iam_policy_document" "origin_website" {
   }
 }
 
-data "template_file" "default" {
-  template = var.website_enabled ? data.aws_iam_policy_document.origin_website.json : data.aws_iam_policy_document.origin.json
-
-  vars = {
+resource "aws_s3_bucket_policy" "default" {
+  count  = !local.using_existing_origin || var.override_origin_bucket_policy ? 1 : 0
+  bucket = local.bucket
+  policy = templatefile(local.template_file_source, {
     origin_path                               = coalesce(var.origin_path, "/")
     bucket_name                               = local.bucket
     cloudfront_origin_access_identity_iam_arn = local.using_existing_cloudfront_origin ? var.cloudfront_origin_access_identity_iam_arn : join("", aws_cloudfront_origin_access_identity.default.*.iam_arn)
-  }
-}
-
-resource "aws_s3_bucket_policy" "default" {
-  count  = ! local.using_existing_origin || var.override_origin_bucket_policy ? 1 : 0
-  bucket = local.bucket
-  policy = data.template_file.default.rendered
+  })
 }
 
 data "aws_region" "current" {
@@ -208,7 +204,7 @@ locals {
     data.aws_s3_bucket.selected.region,
   ) : format(var.bucket_domain_format, local.bucket)
 
-  bucket_website_url = var.website_enabled ? join("", 
+  bucket_website_url = var.website_enabled ? join("",
     concat([""], aws_s3_bucket.origin.*.website_endpoint)
   ) : ""
 }
@@ -238,7 +234,7 @@ resource "aws_cloudfront_distribution" "default" {
     origin_path = var.origin_path
 
     dynamic "s3_origin_config" {
-      for_each = ! var.website_enabled ? [1] : []
+      for_each = !var.website_enabled ? [1] : []
       content {
         origin_access_identity = local.using_existing_cloudfront_origin ? var.cloudfront_origin_access_identity_path : join("", aws_cloudfront_origin_access_identity.default.*.cloudfront_access_identity_path)
       }
