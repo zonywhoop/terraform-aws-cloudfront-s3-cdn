@@ -102,7 +102,7 @@ data "aws_iam_policy_document" "origin_website" {
 resource "aws_s3_bucket_policy" "default" {
   count  = !local.using_existing_origin || var.override_origin_bucket_policy ? 1 : 0
   bucket = local.bucket
-  policy = templatefile(local.template_file_source, {
+  policy = templatestring(local.template_file_source, {
     origin_path                               = coalesce(var.origin_path, "/")
     bucket_name                               = local.bucket
     cloudfront_origin_access_identity_iam_arn = local.using_existing_cloudfront_origin ? var.cloudfront_origin_access_identity_iam_arn : join("", aws_cloudfront_origin_access_identity.default.*.iam_arn)
