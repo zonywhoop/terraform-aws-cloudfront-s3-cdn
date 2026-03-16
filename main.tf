@@ -118,7 +118,7 @@ resource "aws_s3_bucket" "origin" {
   acl           = var.use_website_url ? "public-read" : "private"
   tags          = module.origin_label.tags
   force_destroy = var.origin_force_destroy
-  region        = data.aws_region.current.name
+  # region        = data.aws_region.current.name
 
   dynamic "server_side_encryption_configuration" {
     for_each = var.encryption_enabled ? ["true"] : []
