@@ -66,7 +66,7 @@ data "aws_iam_policy_document" "origin" {
 
     principals {
       type        = "AWS"
-      identifiers = jsonencode([local.cloudfront_origin_access])
+      identifiers = [local.cloudfront_origin_access]
     }
   }
 
@@ -78,7 +78,7 @@ data "aws_iam_policy_document" "origin" {
 
     principals {
       type        = "AWS"
-      identifiers = jsonencode([local.cloudfront_origin_access])
+      identifiers = [local.cloudfront_origin_access]
     }
   }
 }
